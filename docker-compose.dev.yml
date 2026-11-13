@@ -1,4 +1,3 @@
-version: "3.8"
 
 services:
   server:
@@ -6,10 +5,10 @@ services:
     container_name: pern-store-server
     build:
       context: ./server
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     # restart: always
     env_file:
-      - ./server/.env
+      - ./server/.env.example
     environment:
       - POSTGRES_HOST=3.84.191.228
       - POSTGRES_DB=pernstore
@@ -34,10 +33,15 @@ services:
     container_name: pern-store-client
     restart: unless-stopped
     env_file:
-      - ./client/.env
+      - ./client/.env.example
     build:
       context: ./client
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
+      args:
+        VITE_API_URL: /api
+        VITE_GOOGLE_CLIENT_ID: 1002365365078-ptgtl7jq2uubd0a9cenjb7kvk8346nnk.apps.googleusercontent.com
+        VITE_STRIPE_PUB_KEY: pk_test_51SNyAoRAFfdynZnnvsXpNcmnvdJviEDNDMKtvdxxu3Dlbu2D9ZfePrITOA9fJBrS1omT0YjDxU83e2ofJVPoHjeb003RJJua03
+        VITE_PAYSTACK_PUB_KEY: pk_test_51SNyAoRAFfdynZnnvsXpNcmnvdJviEDNDMKtvdxxu3Dlbu2D9ZfePrITOA9fJBrS1omT0YjDxU83e2ofJVPoHjeb003RJJua03
     ports:
       - 3001:3000
     volumes:

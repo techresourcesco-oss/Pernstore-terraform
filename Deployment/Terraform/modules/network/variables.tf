@@ -37,28 +37,28 @@ variable "subnets" {
       public_az_1a = {
         cidr_block        = "10.0.1.0/24"
         map_public_ip     = true
-        availability_zone = "us-east-1a"
+        availability_zone = "ap-southeast-2a"
         name              = "dev-public-subnet-az-1a"
       }
 
       public_az_1b = {
         cidr_block        = "10.0.2.0/24"
         map_public_ip     = true
-        availability_zone = "us-east-1b"
+        availability_zone = "ap-southeast-2b"
         name              = "dev-public-subnet-az-1b"
       }
 
       private_az_1a = {
         cidr_block        = "10.0.3.0/24"
         map_public_ip     = false
-        availability_zone = "us-east-1a"
+        availability_zone = "ap-southeast-2a"
         name              = "dev-private-subnet-az-1a"
       }
     
       private_az_1b = {
         cidr_block        = "10.0.4.0/24"
         map_public_ip     = false
-        availability_zone = "us-east-1b"
+        availability_zone = "ap-southeast-2b"
         name              = "dev-private-subnet-az-1b"
       }
     
@@ -68,28 +68,28 @@ variable "subnets" {
       public_az_1a = {
         cidr_block        = "10.1.1.0/24"
         map_public_ip     = true
-        availability_zone = "us-east-1a"
+        availability_zone = "ap-southeast-2a"
         name              = "stage-public-subnet-az-1a"
       }
 
       public_az_1b = {
         cidr_block        = "10.1.2.0/24"
         map_public_ip     = true
-        availability_zone = "us-east-1b"
+        availability_zone = "ap-southeast-2b"
         name              = "stage-public-subnet-az-1b"
       }
 
       private_az_1a = {
         cidr_block        = "10.1.3.0/24"
         map_public_ip     = false
-        availability_zone = "us-east-1a"
+        availability_zone = "ap-southeast-2a"
         name              = "stage-private-subnet-az-1a"
       }
     
       private_az_1b = {
         cidr_block        = "10.1.4.0/24"
         map_public_ip     = false
-        availability_zone = "us-east-1b"
+        availability_zone = "ap-southeast-2b"
         name              = "stage-private-subnet-az-1b"
       }
     }
@@ -99,28 +99,28 @@ variable "subnets" {
       public_az_1a = {
         cidr_block        = "10.2.1.0/24"
         map_public_ip     = true
-        availability_zone = "us-east-1a"
+        availability_zone = "ap-southeast-2a"
         name              = "prod-public-subnet-az-1a"
       }
 
       public_az_1b = {
         cidr_block        = "10.2.2.0/24"
         map_public_ip     = true
-        availability_zone = "us-east-1b"
+        availability_zone = "ap-southeast-2b"
         name              = "prod-public-subnet-az-1b"
       }
 
       private_az_1a = {
         cidr_block        = "10.2.3.0/24"
         map_public_ip     = false
-        availability_zone = "us-east-1a"
+        availability_zone = "ap-southeast-2a"
         name              = "prod-private-subnet-az-1a"
       }
     
       private_az_1b = {
         cidr_block        = "10.2.4.0/24"
         map_public_ip     = false
-        availability_zone = "us-east-1b"
+        availability_zone = "ap-southeast-2b"
         name              = "prod-private-subnet-az-1b"
       }
     

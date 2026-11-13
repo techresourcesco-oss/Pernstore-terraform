@@ -7,16 +7,19 @@ const database =
     ? process.env.POSTGRES_DB_TEST
     : process.env.POSTGRES_DB;
 
-const connectionString = `postgresql://${process.env.POSTGRES_USER}:${process.env.POSTGRES_PASSWORD}@${process.env.POSTGRES_HOST}:${process.env.POSTGRES_PORT}/${database}`;
 const pool = new Pool({
-  connectionString,
-  /*
-    SSL is not supported in development
-    */
+  host: process.env.POSTGRES_HOST,
+  port: Number(process.env.POSTGRES_PORT),
+  user: process.env.POSTGRES_USER,
+  password: process.env.POSTGRES_PASSWORD,
+  database,
   ssl: isProduction ? { rejectUnauthorized: false } : false,
 });
+
+console.log('db pool is',pool)
 
 module.exports = {
   query: (text, params) => pool.query(text, params),
   end: () => pool.end(),
-};
+}
+;

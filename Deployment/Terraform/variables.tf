@@ -1,7 +1,7 @@
 variable "region" {
   type = string
   description = "default region will be taken "
-  default = "us-east-1"
+  default = "ap-southeast-2"
 }
 
 variable "environment" {

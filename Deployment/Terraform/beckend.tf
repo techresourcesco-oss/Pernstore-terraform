@@ -1,6 +1,6 @@
 resource "aws_s3_bucket" "State_bucket" {
-  bucket = "pern-store-s3-bucket-777"
-  
+  bucket = "pern-store-tf-state-391359249876-b7e91d4c8a2f6e30"
+
 }
 resource "aws_s3_bucket_versioning" "version_s3" {
   bucket = aws_s3_bucket.State_bucket.id
@@ -8,7 +8,7 @@ resource "aws_s3_bucket_versioning" "version_s3" {
     status = "Enabled"
 
   }
- 
+
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "encryption_s3" {
@@ -18,7 +18,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "encryption_s3" {
       sse_algorithm = "AES256"
     }
   }
- 
+
 }
 # creating aws dynamodb for enabling state locking 
 resource "aws_dynamodb_table" "statelocking" {
@@ -29,6 +29,6 @@ resource "aws_dynamodb_table" "statelocking" {
     name = "LockID"
     type = "S"
   }
-  
+
 
 }

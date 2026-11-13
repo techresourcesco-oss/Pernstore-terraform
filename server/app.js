@@ -20,10 +20,14 @@ app.use(helmet());
 app.use(cookieParser());
 
 app.use("/api", routes);
-
+app.get("/loaderio-a48a4517d6cd80be8be7e3aa57e76ddb.txt", (req, res) => {
+  res.type("text/plain");
+  res.send("loaderio-a48a4517d6cd80be8be7e3aa57e76ddb");
+});
 app.get("/", (req, res) =>
   res.send("<h1 style='text-align: center'>E-COMMERCE API</h1>")
 );
+
 app.use(unknownEndpoint);
 app.use(handleError);
 

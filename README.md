@@ -82,13 +82,15 @@ Make sure you have Docker installed
 docker-compose -f docker-compose.dev.yml up
 ```
 
+The development stack maps the frontend to `http://localhost:3001` and the API to `http://localhost:9000`.
+
 ### Run the production environment
 
 ```bash
 docker-compose up
 ```
 
-Go to http://localhost:3000 to view the app running on your browser.
+Go to http://localhost:3001 to view the app running on your browser in the Docker setup.
 
 ## Deployment
 
@@ -121,8 +123,6 @@ To run this project, you will need to add the following environment variables to
 #### client/.env
 
 `VITE_GOOGLE_CLIENT_ID`
-
-`VITE_GOOGLE_CLIENT_SECRET`
 
 `VITE_API_URL`
 
