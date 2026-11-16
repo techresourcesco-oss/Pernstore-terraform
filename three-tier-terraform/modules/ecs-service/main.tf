@@ -51,6 +51,10 @@ resource "aws_ecs_task_definition" "this" {
   ])
 
   tags = var.tags
+
+  lifecycle {
+    ignore_changes = [container_definitions]
+  }
 }
 
 resource "aws_ecs_service" "this" {
@@ -89,6 +93,10 @@ resource "aws_ecs_service" "this" {
   health_check_grace_period_seconds = var.health_check_grace_period
 
   depends_on = [aws_ecs_task_definition.this]
+
+  lifecycle {
+    ignore_changes = [task_definition]
+  }
 }
 
 resource "aws_appautoscaling_target" "this" {
