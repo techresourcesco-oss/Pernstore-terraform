@@ -7,7 +7,6 @@ on:
   workflow_dispatch:
 
 permissions:
-  id-token: write
   contents: read
 
 concurrency:
@@ -41,11 +40,12 @@ jobs:
       - name: Check out the commit being deployed
         uses: actions/checkout@v4
 
-      # Get temporary AWS credentials without storing AWS access keys in GitHub.
-      - name: Get short-lived AWS credentials through GitHub OIDC
+      # Use the IAM user's access key stored as encrypted GitHub Actions secrets.
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
       # Authenticate Docker so it can push the image to ECR.
@@ -99,11 +99,12 @@ jobs:
       - name: Check out the deployment helper
         uses: actions/checkout@v4
 
-      # Get temporary AWS credentials for ECS deployment.
-      - name: Get short-lived AWS credentials through GitHub OIDC
+      # Use the IAM user's access key stored as encrypted GitHub Actions secrets.
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
       # Register a task definition revision, update the service, and wait for health.
@@ -127,11 +128,12 @@ jobs:
       - name: Check out the commit being deployed
         uses: actions/checkout@v4
 
-      # Get temporary AWS credentials without storing AWS access keys in GitHub.
-      - name: Get short-lived AWS credentials through GitHub OIDC
+      # Use the IAM user's access key stored as encrypted GitHub Actions secrets.
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
       # Authenticate Docker so it can push the image to ECR.
@@ -183,11 +185,12 @@ jobs:
       - name: Check out the migration helper
         uses: actions/checkout@v4
 
-      # Get temporary AWS credentials for ECS RunTask and task-definition registration.
-      - name: Get short-lived AWS credentials through GitHub OIDC
+      # Use the IAM user's access key stored as encrypted GitHub Actions secrets.
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
       # Run the migration image in private subnets and fail unless it exits successfully.
@@ -214,11 +217,12 @@ jobs:
       - name: Check out the deployment helper
         uses: actions/checkout@v4
 
-      # Get temporary AWS credentials for ECS deployment.
-      - name: Get short-lived AWS credentials through GitHub OIDC
+      # Use the IAM user's access key stored as encrypted GitHub Actions secrets.
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
       # Register a task definition revision, update the service, and wait for health.
