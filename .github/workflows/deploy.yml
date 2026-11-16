@@ -19,15 +19,13 @@ env:
   ECS_CLUSTER: pern-store-dev-cluster
   FRONTEND_ECR_REPO: store/frontend
   BACKEND_ECR_REPO: store/backend
-  FRONTEND_ECS_SERVICE: pern-store-dev-frontend
+  FRONTEND_ECS_SERVICE: pern-store-dev-frontend1
   BACKEND_ECS_SERVICE: pern-store-dev-backend
-  FRONTEND_TASK_FAMILY: pern-store-dev-frontend
+  FRONTEND_TASK_FAMILY: pern-store-dev-frontend1
   BACKEND_TASK_FAMILY: pern-store-dev-backend
   MIGRATION_TASK_FAMILY: pern-store-dev-backend-migrations
-  FRONTEND_CONTAINER_NAME: pern-store-dev-frontend
+  FRONTEND_CONTAINER_NAME: pern-store-dev-frontend1
   BACKEND_CONTAINER_NAME: pern-store-dev-backend
-  MIGRATION_SUBNETS: ${{ vars.MIGRATION_SUBNETS }}
-  MIGRATION_SECURITY_GROUPS: ${{ vars.MIGRATION_SECURITY_GROUPS }}
 
 jobs:
   build-frontend:
@@ -198,12 +196,11 @@ jobs:
         env:
           AWS_REGION: ${{ env.AWS_REGION }}
           ECS_CLUSTER: ${{ env.ECS_CLUSTER }}
+          BACKEND_ECS_SERVICE: ${{ env.BACKEND_ECS_SERVICE }}
           BACKEND_TASK_FAMILY: ${{ env.BACKEND_TASK_FAMILY }}
           MIGRATION_TASK_FAMILY: ${{ env.MIGRATION_TASK_FAMILY }}
           BACKEND_CONTAINER_NAME: ${{ env.BACKEND_CONTAINER_NAME }}
           IMAGE_URI: ${{ needs.build-backend.outputs.image_uri }}
-          MIGRATION_SUBNETS: ${{ env.MIGRATION_SUBNETS }}
-          MIGRATION_SECURITY_GROUPS: ${{ env.MIGRATION_SECURITY_GROUPS }}
         run: bash .github/scripts/run-ecs-migration.sh
 
   deploy-backend:

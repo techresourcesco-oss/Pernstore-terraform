@@ -1,33 +1,40 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-for name in AWS_REGION ECS_CLUSTER BACKEND_TASK_FAMILY MIGRATION_TASK_FAMILY BACKEND_CONTAINER_NAME IMAGE_URI MIGRATION_SUBNETS MIGRATION_SECURITY_GROUPS; do
+for name in AWS_REGION ECS_CLUSTER BACKEND_ECS_SERVICE BACKEND_TASK_FAMILY MIGRATION_TASK_FAMILY BACKEND_CONTAINER_NAME IMAGE_URI; do
   if [[ -z "${!name:-}" ]]; then
     echo "Required environment variable $name is not set." >&2
     exit 1
   fi
 done
 
-subnets_json="$(
-  jq -ce '
-    if type == "array" and length > 0 and all(.[]; type == "string" and length > 0)
-    then .
-    else error("MIGRATION_SUBNETS must be a non-empty JSON string array")
-    end
-  ' <<< "$MIGRATION_SUBNETS"
-)"
-
-security_groups_json="$(
-  jq -ce '
-    if type == "array" and length > 0 and all(.[]; type == "string" and length > 0)
-    then .
-    else error("MIGRATION_SECURITY_GROUPS must be a non-empty JSON string array")
-    end
-  ' <<< "$MIGRATION_SECURITY_GROUPS"
-)"
-
 work_dir="$(mktemp -d)"
 trap 'rm -rf "$work_dir"' EXIT
+
+aws ecs describe-services \
+  --region "$AWS_REGION" \
+  --cluster "$ECS_CLUSTER" \
+  --services "$BACKEND_ECS_SERVICE" \
+  --output json > "$work_dir/backend-service.json"
+
+if ! jq -e --arg service "$BACKEND_ECS_SERVICE" '
+  ([.services[] | select(.serviceName == $service and .status == "ACTIVE")] | length) == 1
+' "$work_dir/backend-service.json" >/dev/null; then
+  echo "Expected exactly one ACTIVE ECS service named $BACKEND_ECS_SERVICE." >&2
+  jq '.failures' "$work_dir/backend-service.json" >&2
+  exit 1
+fi
+
+network_configuration="$(
+  jq -ce --arg service "$BACKEND_ECS_SERVICE" '
+    [.services[] | select(.serviceName == $service)][0]
+    | .networkConfiguration.awsvpcConfiguration
+    | if (.subnets | length) > 0 and (.securityGroups | length) > 0
+      then .
+      else error("Backend service has no subnet or security-group configuration")
+      end
+  ' "$work_dir/backend-service.json"
+)"
 
 aws ecs describe-task-definition \
   --region "$AWS_REGION" \
@@ -77,20 +84,13 @@ migration_task_definition_arn="$(
 jq -n \
   --arg cluster "$ECS_CLUSTER" \
   --arg task_definition "$migration_task_definition_arn" \
-  --argjson subnets "$subnets_json" \
-  --argjson security_groups "$security_groups_json" '
+  --argjson network "$network_configuration" '
     {
       cluster: $cluster,
       taskDefinition: $task_definition,
       launchType: "FARGATE",
       count: 1,
-      networkConfiguration: {
-        awsvpcConfiguration: {
-          subnets: $subnets,
-          securityGroups: $security_groups,
-          assignPublicIp: "DISABLED"
-        }
-      }
+      networkConfiguration: { awsvpcConfiguration: $network }
     }
   ' > "$work_dir/run-task.json"
 
