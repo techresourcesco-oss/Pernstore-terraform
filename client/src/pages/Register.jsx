@@ -63,7 +63,7 @@ const Register = () => {
           <h1 className="text-center text-4xl">Create Account</h1>
           <div className="mt-4">
             <Label className="block text-grey-darker text-sm font-bold mb-2">
-              <span>Username-Enter your favourite user name</span>
+              <span>Username Abriaz apna username addd kro</span>
             </Label>
             <Input
               className="shadow appearance-none border rounded w-full py-2 px-3 text-grey-darker"
