@@ -170,7 +170,7 @@ module "frontend_service" {
   depends_on = [module.iam]
 
   enabled            = var.enable_frontend_service
-  service_name       = "${var.project_name}-${var.environment}-frontend"
+  service_name       = "${var.project_name}-${var.environment}-frontend1"
   cluster_arn        = module.ecs_cluster.cluster_arn
   cluster_name       = module.ecs_cluster.cluster_name
   aws_region         = var.aws_region
@@ -182,7 +182,7 @@ module "frontend_service" {
   security_groups    = [module.security_groups.frontend_security_group_id]
   desired_count      = var.frontend_desired_count
   task_cpu           = 256
-  task_memory        = 512
+  task_memory        = 1024
   target_group_arn   = var.enable_frontend_service ? module.alb.frontend_target_group_arn : null
   container_environment = {
     PORT     = tostring(var.frontend_container_port)
