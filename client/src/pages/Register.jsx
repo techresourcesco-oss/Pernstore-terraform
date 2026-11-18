@@ -35,7 +35,7 @@ const Register = () => {
       })
         .then(({ data }) => {
           setError("");
-          toast.success("Account created successfully.");
+          toast.success("Account created successfully");
           setTimeout(() => {
             setUserState(data);
             setIsLoading(!isLoading);
