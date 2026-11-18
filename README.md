@@ -76,21 +76,19 @@ Start both client and server concurrently from the root directory
 
 Make sure you have Docker installed
 
-### Run the development environment
+### Run the local development stack
 
 ```bash
-docker-compose -f docker-compose.dev.yml up
+docker compose up --build
 ```
 
-The development stack maps the frontend to `http://localhost:3001` and the API to `http://localhost:9000`.
-
-### Run the production environment
-
-```bash
-docker-compose up
-```
-
-Go to http://localhost:3001 to view the app running on your browser in the Docker setup.
+Open the frontend at `http://localhost:3001`; the backend is available at
+`http://localhost:9000`, and PostgreSQL is available on `localhost:5432`.
+Compose starts PostgreSQL first, runs backend migrations, then starts the
+frontend. Database data persists in the `postgres_data` volume. The default
+database credentials are for local development only. Optional Google and
+payment integrations need their own values supplied through an untracked root
+`.env` file. Do not commit credentials.
 
 ## Deployment
 

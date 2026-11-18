@@ -84,6 +84,12 @@ variable "target_group_arn" {
   default     = null
 }
 
+variable "service_registry_arn" {
+  description = "Optional AWS Cloud Map service registry ARN"
+  type        = string
+  default     = null
+}
+
 variable "container_environment" {
   description = "Environment variables for the task"
   type        = map(string)

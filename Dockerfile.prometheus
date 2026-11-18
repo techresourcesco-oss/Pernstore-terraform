@@ -1,0 +1,4 @@
+FROM prom/prometheus:latest
+# Local file ko utha kar container ke andar copy kar do
+COPY prometheus.yml /etc/prometheus/prometheus.yml
+

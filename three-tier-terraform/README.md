@@ -40,10 +40,21 @@ Terraform will migrate that environment's existing local state into the configur
 4. `terraform apply`
 5. Copy the bootstrap `bucket_name` output into the environment `backend.hcl` file(s)
 6. `cd ..\..\environments\dev`
-7. Build and push the required image tags to ECR before the environment apply. The backend image must include `scripts/migrate.js` and the `migrations/` directory.
+7. Build and push the frontend and backend images to ECR before the environment apply. The backend image must include `scripts/migrate.js` and the `migrations/` directory.
 8. `terraform init -backend=false`
 9. `terraform plan`
 10. `terraform apply`; Terraform runs the database migration as a one-off Fargate task before creating or updating the backend service.
+
+The dev environment also registers the backend as `backend.pern.internal` using AWS Cloud Map and deploys a private `monitoring-service` Fargate service. The monitoring task uses the existing `pern-prometheus` ECR repository. Build and push the custom Prometheus image before applying:
+
+```powershell
+docker build -f ..\..\..\Dockerfile.prometheus -t pern-prometheus:latest ..\..\..
+$repository = terraform output -raw prometheus_repository_url
+docker tag pern-prometheus:latest "$($repository):latest"
+docker push "$($repository):latest"
+```
+
+The repository URL is read from ECR in the active AWS account and configured region. The monitoring service runs Prometheus, Loki, and Grafana without an ALB, with VPC-only access on ports 9090, 3100, and 3200.
 
 ## Manual Docker pushes
 

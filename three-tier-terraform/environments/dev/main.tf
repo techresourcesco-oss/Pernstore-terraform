@@ -81,6 +81,29 @@ module "security_groups" {
   tags          = local.tags
 }
 
+resource "aws_service_discovery_private_dns_namespace" "pern" {
+  name        = "pern.internal"
+  description = "Private service discovery namespace for the PERN Store VPC"
+  vpc         = module.networking.vpc_id
+  tags        = local.tags
+}
+
+resource "aws_service_discovery_service" "backend" {
+  name = "backend"
+
+  dns_config {
+    namespace_id   = aws_service_discovery_private_dns_namespace.pern.id
+    routing_policy = "MULTIVALUE"
+
+    dns_records {
+      ttl  = 10
+      type = "A"
+    }
+  }
+
+  tags = local.tags
+}
+
 data "aws_ecr_repository" "frontend" {
   name = "store/frontend"
 }
@@ -198,21 +221,22 @@ module "backend_service" {
 
   depends_on = [module.iam, module.db_migrations]
 
-  enabled            = var.enable_backend_service
-  service_name       = "${var.project_name}-${var.environment}-backend"
-  cluster_arn        = module.ecs_cluster.cluster_arn
-  cluster_name       = module.ecs_cluster.cluster_name
-  aws_region         = var.aws_region
-  execution_role_arn = module.iam.ecs_task_execution_role_arn
-  task_role_arn      = module.iam.backend_task_role_arn
-  container_image    = var.backend_container_image
-  container_port     = var.backend_container_port
-  subnets            = module.networking.private_app_subnet_ids
-  security_groups    = [module.security_groups.backend_security_group_id]
-  desired_count      = var.backend_desired_count
-  task_cpu           = 512
-  task_memory        = 1024
-  target_group_arn   = var.enable_backend_service ? module.alb.backend_target_group_arn : null
+  enabled              = var.enable_backend_service
+  service_name         = "${var.project_name}-${var.environment}-backend"
+  cluster_arn          = module.ecs_cluster.cluster_arn
+  cluster_name         = module.ecs_cluster.cluster_name
+  aws_region           = var.aws_region
+  execution_role_arn   = module.iam.ecs_task_execution_role_arn
+  task_role_arn        = module.iam.backend_task_role_arn
+  container_image      = var.backend_container_image
+  container_port       = var.backend_container_port
+  subnets              = module.networking.private_app_subnet_ids
+  security_groups      = [module.security_groups.backend_security_group_id]
+  desired_count        = var.backend_desired_count
+  task_cpu             = 512
+  task_memory          = 1024
+  service_registry_arn = aws_service_discovery_service.backend.arn
+  target_group_arn     = var.enable_backend_service ? module.alb.backend_target_group_arn : null
   container_environment = {
     PORT          = tostring(var.backend_container_port)
     NODE_ENV      = "production"
@@ -242,4 +266,16 @@ module "monitoring" {
   alb_arn_suffix        = module.alb.alb_arn_suffix
   rds_instance_id       = module.rds.db_instance_id
   tags                  = local.tags
+}
+
+module "monitoring_stack" {
+  source = "../../modules/monitoring-stack"
+
+  cluster_arn        = module.ecs_cluster.cluster_arn
+  execution_role_arn = module.iam.ecs_task_execution_role_arn
+  aws_region         = var.aws_region
+  vpc_id             = module.networking.vpc_id
+  vpc_cidr           = var.vpc_cidr
+  private_subnets    = module.networking.private_app_subnet_ids
+  tags               = local.tags
 }

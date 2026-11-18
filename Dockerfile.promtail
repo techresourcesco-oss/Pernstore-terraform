@@ -1,0 +1,4 @@
+FROM grafana/promtail:latest
+# Local config file ko container ke andar copy kar do
+COPY promtail-config.yaml /etc/promtail/config.yml
+

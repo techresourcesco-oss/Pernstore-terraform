@@ -35,7 +35,8 @@ if (!isHelpRequest) {
   const hostname = POSTGRES_HOST;
   const port = Number(POSTGRES_PORT);
   const database = POSTGRES_DB;
-  const sslSuffix = "?sslmode=no-verify";
+  const sslSuffix =
+    NODE_ENV === "production" ? "?sslmode=no-verify" : "?sslmode=disable";
 
   process.env.DATABASE_URL = `${protocol}://${credentials}@${hostname}:${port}/${database}${sslSuffix}`;
 }

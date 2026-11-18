@@ -72,6 +72,13 @@ resource "aws_ecs_service" "this" {
     assign_public_ip = var.assign_public_ip
   }
 
+  dynamic "service_registries" {
+    for_each = var.service_registry_arn == null ? [] : [var.service_registry_arn]
+    content {
+      registry_arn = service_registries.value
+    }
+  }
+
   dynamic "load_balancer" {
     for_each = var.target_group_arn == null ? [] : [1]
     content {

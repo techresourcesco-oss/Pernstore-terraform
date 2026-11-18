@@ -14,6 +14,10 @@ output "backend_repository_url" {
   value = local.backend_repository_url
 }
 
+output "prometheus_repository_url" {
+  value = module.monitoring_stack.prometheus_repository_url
+}
+
 output "rds_endpoint" {
   value = module.rds.db_instance_address
 }
