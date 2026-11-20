@@ -56,7 +56,7 @@ docker push "$($repository):latest"
 
 The repository URL is read from ECR in the active AWS account and configured region. Grafana, Prometheus, and Loki are exposed through the existing ALB at `http://<alb-dns-name>:3200`, `:9090`, and `:3100`, respectively. Their target groups use health paths `/api/health`, `/-/healthy`, and `/ready`. Prometheus and Loki are internet-accessible without authentication; restrict access if they should not be public.
 
-The dev backend task routes its application logs through the FireLens Fluent Bit sidecar to the Loki ALB listener on port 3100. Terraform manages task-definition and service revisions for the `ecs-service` module so logging configuration changes are deployed with `terraform apply`.
+The dev backend task routes its application logs through the FireLens Fluent Bit sidecar to the Loki ALB listener on port 3100. Terraform manages task-definition configuration, while the GitHub Actions deployment workflow owns ECS service task-definition revisions and image updates. The ECS service ignores task-definition drift so a later Terraform apply does not roll the service back to the image pinned in `terraform.tfvars`.
 
 Grafana SMTP credentials use an AWS Secrets Manager secret at `${project_name}/${environment}/grafana/smtp-password` (for dev: `pern-store/dev/grafana/smtp-password`). On first setup, run `terraform apply -target=aws_secretsmanager_secret.grafana_smtp_password`, then add a fresh Gmail app password as the secret's plaintext value in the AWS console. After it has a value, run the normal `terraform plan` and `terraform apply`. Terraform creates the secret metadata and passes its ARN to ECS, but never stores the password value in Terraform state.
 

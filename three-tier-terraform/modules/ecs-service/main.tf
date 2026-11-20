@@ -82,6 +82,14 @@ resource "aws_ecs_task_definition" "this" {
             {
               name  = "NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED"
               value = "true"
+            },
+            {
+              name  = "NEW_RELIC_LOG"
+              value = "stdout"
+            },
+            {
+              name  = "NEW_RELIC_LOG_LEVEL"
+              value = "info"
             }
           ]
         )
@@ -168,6 +176,9 @@ resource "aws_ecs_service" "this" {
 
   depends_on = [aws_ecs_task_definition.this]
 
+  lifecycle {
+    ignore_changes = [task_definition]
+  }
 }
 
 resource "aws_appautoscaling_target" "this" {
