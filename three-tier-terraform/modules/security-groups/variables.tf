@@ -8,6 +8,18 @@ variable "vpc_id" {
   type        = string
 }
 
+variable "vpc_cidr" {
+  description = "VPC CIDR allowed to access monitoring endpoints"
+  type        = string
+  default     = null
+}
+
+variable "monitoring_service_enabled" {
+  description = "Whether to create the monitoring service security group and backend ingress"
+  type        = bool
+  default     = false
+}
+
 variable "frontend_port" {
   description = "Frontend port"
   type        = number

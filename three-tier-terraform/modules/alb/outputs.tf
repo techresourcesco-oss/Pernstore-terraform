@@ -17,3 +17,15 @@ output "frontend_target_group_arn" {
 output "backend_target_group_arn" {
   value = aws_lb_target_group.backend.arn
 }
+
+output "grafana_target_group_arn" {
+  value = aws_lb_target_group.grafana.arn
+}
+
+output "prometheus_target_group_arn" {
+  value = aws_lb_target_group.prometheus.arn
+}
+
+output "loki_target_group_arn" {
+  value = aws_lb_target_group.loki.arn
+}

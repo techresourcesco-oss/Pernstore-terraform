@@ -58,6 +58,75 @@ resource "aws_lb_target_group" "backend" {
   })
 }
 
+resource "aws_lb_target_group" "grafana" {
+  name        = "grafana-tg"
+  port        = 3200
+  protocol    = "HTTP"
+  target_type = "ip"
+  vpc_id      = var.vpc_id
+
+  health_check {
+    path                = "/api/health"
+    healthy_threshold   = 2
+    unhealthy_threshold = 5
+    matcher             = "200-399"
+    interval            = 30
+    timeout             = 5
+    port                = "traffic-port"
+    protocol            = "HTTP"
+  }
+
+  tags = merge(var.tags, {
+    Name = "grafana-tg"
+  })
+}
+
+resource "aws_lb_target_group" "prometheus" {
+  name        = "prometheus-tg"
+  port        = 9090
+  protocol    = "HTTP"
+  target_type = "ip"
+  vpc_id      = var.vpc_id
+
+  health_check {
+    path                = "/-/healthy"
+    healthy_threshold   = 2
+    unhealthy_threshold = 5
+    matcher             = "200-399"
+    interval            = 30
+    timeout             = 5
+    port                = "traffic-port"
+    protocol            = "HTTP"
+  }
+
+  tags = merge(var.tags, {
+    Name = "prometheus-tg"
+  })
+}
+
+resource "aws_lb_target_group" "loki" {
+  name        = "loki-tg"
+  port        = 3100
+  protocol    = "HTTP"
+  target_type = "ip"
+  vpc_id      = var.vpc_id
+
+  health_check {
+    path                = "/ready"
+    healthy_threshold   = 2
+    unhealthy_threshold = 5
+    matcher             = "200-399"
+    interval            = 30
+    timeout             = 5
+    port                = "traffic-port"
+    protocol            = "HTTP"
+  }
+
+  tags = merge(var.tags, {
+    Name = "loki-tg"
+  })
+}
+
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.this.arn
   port              = 80
@@ -103,6 +172,39 @@ resource "aws_lb_listener" "https" {
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.frontend.arn
+  }
+}
+
+resource "aws_lb_listener" "grafana" {
+  load_balancer_arn = aws_lb.this.arn
+  port              = 3200
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.grafana.arn
+  }
+}
+
+resource "aws_lb_listener" "prometheus" {
+  load_balancer_arn = aws_lb.this.arn
+  port              = 9090
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.prometheus.arn
+  }
+}
+
+resource "aws_lb_listener" "loki" {
+  load_balancer_arn = aws_lb.this.arn
+  port              = 3100
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.loki.arn
   }
 }
 

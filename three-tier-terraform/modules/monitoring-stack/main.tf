@@ -29,48 +29,6 @@ resource "aws_ecr_repository" "prometheus" {
   tags = var.tags
 }
 
-resource "aws_security_group" "this" {
-  name        = "monitoring-service-sg"
-  description = "Allow monitoring endpoints from within the VPC"
-  vpc_id      = var.vpc_id
-
-  ingress {
-    description = "Prometheus"
-    from_port   = 9090
-    to_port     = 9090
-    protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr]
-  }
-
-  ingress {
-    description = "Loki"
-    from_port   = 3100
-    to_port     = 3100
-    protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr]
-  }
-
-  ingress {
-    description = "Grafana"
-    from_port   = 3200
-    to_port     = 3200
-    protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr]
-  }
-
-  egress {
-    description = "All outbound"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = merge(var.tags, {
-    Name = "monitoring-service-sg"
-  })
-}
-
 resource "aws_cloudwatch_log_group" "this" {
   name              = "/ecs/monitoring-stack"
   retention_in_days = 30
@@ -116,6 +74,25 @@ resource "aws_ecs_task_definition" "this" {
       environment = [{
         name  = "GF_SERVER_HTTP_PORT"
         value = "3200"
+        }, {
+        name  = "GF_SMTP_ENABLED"
+        value = "true"
+        }, {
+        name  = "GF_SMTP_HOST"
+        value = var.grafana_smtp_host
+        }, {
+        name  = "GF_SMTP_USER"
+        value = var.grafana_smtp_user
+        }, {
+        name  = "GF_SMTP_FROM_ADDRESS"
+        value = var.grafana_smtp_from_address
+        }, {
+        name  = "GF_SMTP_FROM_NAME"
+        value = var.grafana_smtp_from_name
+      }]
+      secrets = [{
+        name      = "GF_SMTP_PASSWORD"
+        valueFrom = var.grafana_smtp_password_secret_arn
       }]
       portMappings = [{
         containerPort = 3200
@@ -138,8 +115,26 @@ resource "aws_ecs_service" "this" {
 
   network_configuration {
     subnets          = var.private_subnets
-    security_groups  = [aws_security_group.this.id]
+    security_groups  = [var.security_group_id]
     assign_public_ip = false
+  }
+
+  load_balancer {
+    target_group_arn = var.grafana_target_group_arn
+    container_name   = "grafana"
+    container_port   = 3200
+  }
+
+  load_balancer {
+    target_group_arn = var.prometheus_target_group_arn
+    container_name   = "prometheus"
+    container_port   = 9090
+  }
+
+  load_balancer {
+    target_group_arn = var.loki_target_group_arn
+    container_name   = "loki"
+    container_port   = 3100
   }
 
   tags = var.tags

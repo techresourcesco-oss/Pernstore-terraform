@@ -13,19 +13,54 @@ variable "aws_region" {
   type        = string
 }
 
-variable "vpc_id" {
-  description = "VPC hosting the monitoring service"
-  type        = string
-}
-
-variable "vpc_cidr" {
-  description = "CIDR allowed to access the monitoring endpoints"
-  type        = string
-}
-
 variable "private_subnets" {
   description = "Private subnet IDs for the monitoring service"
   type        = list(string)
+}
+
+variable "security_group_id" {
+  description = "Security group ID for the monitoring service"
+  type        = string
+}
+
+variable "grafana_target_group_arn" {
+  description = "ALB target group ARN for the Grafana container"
+  type        = string
+}
+
+variable "prometheus_target_group_arn" {
+  description = "ALB target group ARN for the Prometheus container"
+  type        = string
+}
+
+variable "loki_target_group_arn" {
+  description = "ALB target group ARN for the Loki container"
+  type        = string
+}
+
+variable "grafana_smtp_host" {
+  description = "SMTP host and port for Grafana alert email"
+  type        = string
+}
+
+variable "grafana_smtp_user" {
+  description = "SMTP user for Grafana alert email"
+  type        = string
+}
+
+variable "grafana_smtp_from_address" {
+  description = "Sender address for Grafana alert email"
+  type        = string
+}
+
+variable "grafana_smtp_from_name" {
+  description = "Sender name for Grafana alert email"
+  type        = string
+}
+
+variable "grafana_smtp_password_secret_arn" {
+  description = "Secrets Manager ARN containing the Grafana SMTP app password"
+  type        = string
 }
 
 variable "tags" {

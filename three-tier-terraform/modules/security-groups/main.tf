@@ -19,6 +19,30 @@ resource "aws_security_group" "alb" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress {
+    description = "Grafana from internet"
+    from_port   = 3200
+    to_port     = 3200
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Prometheus from internet"
+    from_port   = 9090
+    to_port     = 9090
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Loki from internet"
+    from_port   = 3100
+    to_port     = 3100
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   egress {
     description = "All outbound"
     from_port   = 0
@@ -79,6 +103,18 @@ resource "aws_security_group" "backend" {
     security_groups = [aws_security_group.frontend.id]
   }
 
+  dynamic "ingress" {
+    for_each = var.monitoring_service_enabled ? [aws_security_group.monitoring[0].id] : []
+
+    content {
+      description     = "Allow from monitoring service"
+      from_port       = var.backend_port
+      to_port         = var.backend_port
+      protocol        = "tcp"
+      security_groups = [ingress.value]
+    }
+  }
+
   egress {
     description = "All outbound"
     from_port   = 0
@@ -89,6 +125,49 @@ resource "aws_security_group" "backend" {
 
   tags = merge(var.tags, {
     Name = "${var.name}-backend-sg"
+  })
+}
+
+resource "aws_security_group" "monitoring" {
+  count       = var.monitoring_service_enabled ? 1 : 0
+  name        = "monitoring-service-sg"
+  description = "Allow monitoring endpoints from within the VPC"
+  vpc_id      = var.vpc_id
+
+  ingress {
+    description = "Prometheus"
+    from_port   = 9090
+    to_port     = 9090
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  ingress {
+    description = "Loki"
+    from_port   = 3100
+    to_port     = 3100
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  ingress {
+    description = "Grafana"
+    from_port   = 3200
+    to_port     = 3200
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  egress {
+    description = "All outbound"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(var.tags, {
+    Name = "monitoring-service-sg"
   })
 }
 

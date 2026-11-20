@@ -54,7 +54,13 @@ docker tag pern-prometheus:latest "$($repository):latest"
 docker push "$($repository):latest"
 ```
 
-The repository URL is read from ECR in the active AWS account and configured region. The monitoring service runs Prometheus, Loki, and Grafana without an ALB, with VPC-only access on ports 9090, 3100, and 3200.
+The repository URL is read from ECR in the active AWS account and configured region. Grafana, Prometheus, and Loki are exposed through the existing ALB at `http://<alb-dns-name>:3200`, `:9090`, and `:3100`, respectively. Their target groups use health paths `/api/health`, `/-/healthy`, and `/ready`. Prometheus and Loki are internet-accessible without authentication; restrict access if they should not be public.
+
+The dev backend task routes its application logs through the FireLens Fluent Bit sidecar to the Loki ALB listener on port 3100. Terraform manages task-definition and service revisions for the `ecs-service` module so logging configuration changes are deployed with `terraform apply`.
+
+Grafana SMTP credentials use an AWS Secrets Manager secret at `${project_name}/${environment}/grafana/smtp-password` (for dev: `pern-store/dev/grafana/smtp-password`). On first setup, run `terraform apply -target=aws_secretsmanager_secret.grafana_smtp_password`, then add a fresh Gmail app password as the secret's plaintext value in the AWS console. After it has a value, run the normal `terraform plan` and `terraform apply`. Terraform creates the secret metadata and passes its ARN to ECS, but never stores the password value in Terraform state.
+
+The dev backend uses the New Relic Node.js agent. Set `TF_VAR_new_relic_license_key` in the shell that runs Terraform before planning/applying; do not save the key in `terraform.tfvars`. The variable is marked sensitive, but ECS task-definition environment values are stored in Terraform state, so protect the state file and remote-state access.
 
 ## Manual Docker pushes
 

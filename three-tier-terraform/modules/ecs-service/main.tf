@@ -1,3 +1,35 @@
+locals {
+  cloudwatch_log_configuration = {
+    logDriver = "awslogs"
+    options = {
+      "awslogs-group"         = aws_cloudwatch_log_group.this.name
+      "awslogs-region"        = var.aws_region
+      "awslogs-stream-prefix" = var.service_name
+    }
+  }
+
+  log_router_log_configuration = {
+    logDriver = "awslogs"
+    options = {
+      "awslogs-group"         = aws_cloudwatch_log_group.this.name
+      "awslogs-region"        = var.aws_region
+      "awslogs-stream-prefix" = "${var.service_name}-log-router"
+    }
+  }
+
+  loki_log_configuration = {
+    logDriver = "awsfirelens"
+    options = {
+      Name        = "loki"
+      Host        = var.firelens_loki_host
+      Port        = "3100"
+      labels      = "job=pern-backend"
+      remove_keys = "container_id,ecs_task_arn"
+      line_format = "json"
+    }
+  }
+}
+
 resource "aws_cloudwatch_log_group" "this" {
   name              = "/ecs/${var.service_name}"
   retention_in_days = var.log_retention_days
@@ -13,48 +45,83 @@ resource "aws_ecs_task_definition" "this" {
   execution_role_arn       = var.execution_role_arn
   task_role_arn            = var.task_role_arn
 
-  container_definitions = jsonencode([
-    {
-      name      = var.service_name
-      image     = var.container_image
-      essential = true
-      cpu       = 0
-      portMappings = [{
-        containerPort = var.container_port
-        hostPort      = var.container_port
-        protocol      = "tcp"
-      }]
-      environment = [for key, value in var.container_environment : {
-        name  = key
-        value = tostring(value)
-      }]
-      secrets = [for key, value in var.secrets : {
-        name      = key
-        valueFrom = value
-      }]
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.this.name
-          "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = var.service_name
+  container_definitions = jsonencode(concat(
+    [
+      merge({
+        name      = var.service_name
+        image     = var.container_image
+        essential = true
+        cpu       = 0
+        portMappings = [{
+          containerPort = var.container_port
+          hostPort      = var.container_port
+          protocol      = "tcp"
+        }]
+        environment = concat(
+          [for key, value in var.container_environment : {
+            name  = key
+            value = tostring(value)
+          }],
+          var.new_relic_license_key == null ? [] : [
+            {
+              name  = "NEW_RELIC_NO_CONFIG_FILE"
+              value = "true"
+            },
+            {
+              name  = "NEW_RELIC_APP_NAME"
+              value = var.new_relic_app_name
+            },
+            {
+              name  = "NEW_RELIC_LICENSE_KEY"
+              value = var.new_relic_license_key
+            },
+            {
+              name  = "NEW_RELIC_DISTRIBUTED_TRACING_ENABLED"
+              value = "true"
+            },
+            {
+              name  = "NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED"
+              value = "true"
+            }
+          ]
+        )
+        secrets = [for key, value in var.secrets : {
+          name      = key
+          valueFrom = value
+        }]
+        logConfiguration = var.firelens_loki_host == null ? local.cloudwatch_log_configuration : local.loki_log_configuration
+        healthCheck = var.health_check_command == null ? null : {
+          command     = var.health_check_command
+          interval    = 30
+          retries     = 3
+          timeout     = 5
+          startPeriod = 30
         }
+        }, var.firelens_loki_host == null ? {} : {
+        dependsOn = [{
+          containerName = "log_router"
+          condition     = "START"
+        }]
+      })
+    ],
+    var.firelens_loki_host == null ? [] : [
+      {
+        name      = "log_router"
+        image     = "public.ecr.aws/aws-observability/aws-for-fluent-bit:latest"
+        essential = true
+        firelensConfiguration = {
+          type = "fluentbit"
+          options = {
+            "enable-ecs-log-metadata" = "true"
+          }
+        }
+        logConfiguration = local.log_router_log_configuration
       }
-      healthCheck = var.health_check_command == null ? null : {
-        command     = var.health_check_command
-        interval    = 30
-        retries     = 3
-        timeout     = 5
-        startPeriod = 30
-      }
-    }
-  ])
+    ]
+  ))
 
   tags = var.tags
 
-  lifecycle {
-    ignore_changes = [container_definitions]
-  }
 }
 
 resource "aws_ecs_service" "this" {
@@ -101,9 +168,6 @@ resource "aws_ecs_service" "this" {
 
   depends_on = [aws_ecs_task_definition.this]
 
-  lifecycle {
-    ignore_changes = [task_definition]
-  }
 }
 
 resource "aws_appautoscaling_target" "this" {

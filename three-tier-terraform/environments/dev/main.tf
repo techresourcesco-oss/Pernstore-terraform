@@ -74,11 +74,18 @@ module "networking" {
 module "security_groups" {
   source = "../../modules/security-groups"
 
-  name          = "${var.project_name}-${var.environment}"
-  vpc_id        = module.networking.vpc_id
-  frontend_port = var.frontend_container_port
-  backend_port  = var.backend_container_port
-  tags          = local.tags
+  name                       = "${var.project_name}-${var.environment}"
+  vpc_id                     = module.networking.vpc_id
+  vpc_cidr                   = var.vpc_cidr
+  monitoring_service_enabled = true
+  frontend_port              = var.frontend_container_port
+  backend_port               = var.backend_container_port
+  tags                       = local.tags
+}
+
+moved {
+  from = module.monitoring_stack.aws_security_group.this
+  to   = module.security_groups.aws_security_group.monitoring[0]
 }
 
 resource "aws_service_discovery_private_dns_namespace" "pern" {
@@ -110,6 +117,11 @@ data "aws_ecr_repository" "frontend" {
 
 data "aws_ecr_repository" "backend" {
   name = "store/backend"
+}
+
+resource "aws_secretsmanager_secret" "grafana_smtp_password" {
+  name = "${var.project_name}/${var.environment}/grafana/smtp-password"
+  tags = local.tags
 }
 
 module "iam" {
@@ -221,22 +233,25 @@ module "backend_service" {
 
   depends_on = [module.iam, module.db_migrations]
 
-  enabled              = var.enable_backend_service
-  service_name         = "${var.project_name}-${var.environment}-backend"
-  cluster_arn          = module.ecs_cluster.cluster_arn
-  cluster_name         = module.ecs_cluster.cluster_name
-  aws_region           = var.aws_region
-  execution_role_arn   = module.iam.ecs_task_execution_role_arn
-  task_role_arn        = module.iam.backend_task_role_arn
-  container_image      = var.backend_container_image
-  container_port       = var.backend_container_port
-  subnets              = module.networking.private_app_subnet_ids
-  security_groups      = [module.security_groups.backend_security_group_id]
-  desired_count        = var.backend_desired_count
-  task_cpu             = 512
-  task_memory          = 1024
-  service_registry_arn = aws_service_discovery_service.backend.arn
-  target_group_arn     = var.enable_backend_service ? module.alb.backend_target_group_arn : null
+  enabled               = var.enable_backend_service
+  service_name          = "${var.project_name}-${var.environment}-backend"
+  cluster_arn           = module.ecs_cluster.cluster_arn
+  cluster_name          = module.ecs_cluster.cluster_name
+  aws_region            = var.aws_region
+  execution_role_arn    = module.iam.ecs_task_execution_role_arn
+  task_role_arn         = module.iam.backend_task_role_arn
+  container_image       = var.backend_container_image
+  container_port        = var.backend_container_port
+  subnets               = module.networking.private_app_subnet_ids
+  security_groups       = [module.security_groups.backend_security_group_id]
+  desired_count         = var.backend_desired_count
+  task_cpu              = 512
+  task_memory           = 1024
+  firelens_loki_host    = module.alb.alb_dns_name
+  new_relic_license_key = var.new_relic_license_key
+  new_relic_app_name    = "pern-backend-dev"
+  service_registry_arn  = aws_service_discovery_service.backend.arn
+  target_group_arn      = var.enable_backend_service ? module.alb.backend_target_group_arn : null
   container_environment = {
     PORT          = tostring(var.backend_container_port)
     NODE_ENV      = "production"
@@ -271,11 +286,20 @@ module "monitoring" {
 module "monitoring_stack" {
   source = "../../modules/monitoring-stack"
 
-  cluster_arn        = module.ecs_cluster.cluster_arn
-  execution_role_arn = module.iam.ecs_task_execution_role_arn
-  aws_region         = var.aws_region
-  vpc_id             = module.networking.vpc_id
-  vpc_cidr           = var.vpc_cidr
-  private_subnets    = module.networking.private_app_subnet_ids
-  tags               = local.tags
+  depends_on = [module.alb, module.iam]
+
+  cluster_arn                      = module.ecs_cluster.cluster_arn
+  execution_role_arn               = module.iam.ecs_task_execution_role_arn
+  aws_region                       = var.aws_region
+  private_subnets                  = module.networking.private_app_subnet_ids
+  security_group_id                = module.security_groups.monitoring_security_group_id
+  grafana_target_group_arn         = module.alb.grafana_target_group_arn
+  prometheus_target_group_arn      = module.alb.prometheus_target_group_arn
+  loki_target_group_arn            = module.alb.loki_target_group_arn
+  grafana_smtp_host                = "smtp.gmail.com:587"
+  grafana_smtp_user                = "computer388unofficial@gmail.com"
+  grafana_smtp_from_address        = "computer388unofficial@gmail.com"
+  grafana_smtp_from_name           = "PERN Monitoring Alerts"
+  grafana_smtp_password_secret_arn = aws_secretsmanager_secret.grafana_smtp_password.arn
+  tags                             = local.tags
 }

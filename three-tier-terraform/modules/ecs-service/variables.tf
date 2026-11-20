@@ -39,6 +39,25 @@ variable "container_image" {
   type        = string
 }
 
+variable "firelens_loki_host" {
+  description = "Optional Loki host for routing container logs through FireLens"
+  type        = string
+  default     = null
+}
+
+variable "new_relic_license_key" {
+  description = "Optional New Relic license key for the application container"
+  type        = string
+  sensitive   = true
+  default     = null
+}
+
+variable "new_relic_app_name" {
+  description = "Optional New Relic application name"
+  type        = string
+  default     = null
+}
+
 variable "container_port" {
   description = "Container port"
   type        = number
