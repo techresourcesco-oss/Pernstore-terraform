@@ -16,8 +16,6 @@ const pool = new Pool({
   ssl: isProduction ? { rejectUnauthorized: false } : false,
 });
 
-console.log('db pool is',pool)
-
 module.exports = {
   query: (text, params) => pool.query(text, params),
   end: () => pool.end(),

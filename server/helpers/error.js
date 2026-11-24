@@ -10,7 +10,14 @@ class ErrorHandler extends Error {
 
 const handleError = (err, req, res, next) => {
   const { statusCode, message } = err;
-  logger.error(err);
+  logger.error("Request failed", {
+    method: req.method,
+    path: req.path,
+    statusCode: statusCode || 500,
+    errorName: err.name,
+    errorMessage: message,
+    stack: err.stack,
+  });
   res.status(statusCode || 500).json({
     status: "error",
     statusCode: statusCode || 500,

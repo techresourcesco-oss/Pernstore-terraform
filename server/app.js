@@ -1,7 +1,6 @@
 const express = require("express");
 require("express-async-errors");
 const cors = require("cors");
-const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const routes = require("./routes");
 const helmet = require("helmet");
@@ -9,6 +8,7 @@ const compression = require("compression");
 const promClient = require("prom-client");
 const unknownEndpoint = require("./middleware/unKnownEndpoint");
 const { handleError } = require("./helpers/error");
+const { logger } = require("./utils/logger");
 const client = require('prom-client');
 
 const app = express();
@@ -18,10 +18,28 @@ promClient.collectDefaultMetrics();
 app.set("trust proxy", 1);
 app.use(cors({ credentials: true, origin: true }));
 app.use(express.json());
-app.use(morgan("dev"));
 app.use(compression());
 app.use(helmet());
 app.use(cookieParser());
+
+app.use((req, res, next) => {
+  if ((req.method === "GET" && req.path === "/") || req.path === "/metrics") {
+    return next();
+  }
+
+  const startedAt = Date.now();
+  res.on("finish", () => {
+    const route = req.route && req.route.path ? req.route.path : req.path;
+    logger.info("HTTP request", {
+      method: req.method,
+      route: req.baseUrl + route,
+      statusCode: res.statusCode,
+      durationMs: Date.now() - startedAt,
+    });
+  });
+
+  next();
+});
 
 // 1. API Response time aur status track karne ke liye Histogram banayein
 const httpRequestDurationMicroseconds = new client.Histogram({

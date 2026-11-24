@@ -72,11 +72,6 @@ variable "frontend_container_image" {
   default = "438424052578.dkr.ecr.ap-southeast-2.amazonaws.com/store/frontend:v2"
 }
 
-variable "backend_container_image" {
-  type    = string
-  default = "438424052578.dkr.ecr.ap-southeast-2.amazonaws.com/store/backend:latest"
-}
-
 variable "new_relic_license_key" {
   description = "New Relic license key for the backend ECS task; set using TF_VAR_new_relic_license_key"
   type        = string

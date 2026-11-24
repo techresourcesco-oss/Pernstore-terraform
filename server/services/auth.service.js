@@ -293,7 +293,10 @@ class AuthService {
     try {
       return jwt.sign(data, process.env.SECRET, { expiresIn: "60s" });
     } catch (error) {
-      logger.error(error);
+      logger.error("Failed to sign token", {
+        errorMessage: error.message,
+        stack: error.stack,
+      });
       throw new ErrorHandler(500, "An error occurred");
     }
   }
@@ -302,7 +305,10 @@ class AuthService {
     try {
       return jwt.sign(data, process.env.REFRESH_SECRET, { expiresIn: "1h" });
     } catch (error) {
-      logger.error(error);
+      logger.error("Failed to sign refresh token", {
+        errorMessage: error.message,
+        stack: error.stack,
+      });
       throw new ErrorHandler(500, error.message);
     }
   }
@@ -316,7 +322,10 @@ class AuthService {
         cart_id: payload.cart_id,
       };
     } catch (error) {
-      logger.error(error);
+      logger.error("Failed to verify refresh token", {
+        errorMessage: error.message,
+        stack: error.stack,
+      });
       throw new ErrorHandler(500, error.message);
     }
   }

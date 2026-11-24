@@ -32,6 +32,7 @@ locals {
   }
   frontend_repository_url = data.aws_ecr_repository.frontend.repository_url
   backend_repository_url  = data.aws_ecr_repository.backend.repository_url
+  backend_container_image = data.aws_ecr_image.backend.image_uri
 }
 
 resource "random_password" "app_secret" {
@@ -119,9 +120,14 @@ data "aws_ecr_repository" "backend" {
   name = "store/backend"
 }
 
+data "aws_ecr_image" "backend" {
+  repository_name = data.aws_ecr_repository.backend.name
+  most_recent     = true
+}
+
 resource "aws_secretsmanager_secret" "grafana_smtp_password" {
-  name = "${var.project_name}/${var.environment}/grafana/smtp-password"
-  tags = local.tags
+  name_prefix = "${var.project_name}/${var.environment}/grafana/smtp-password-"
+  tags        = local.tags
 }
 
 module "iam" {
@@ -188,7 +194,7 @@ module "db_migrations" {
   cluster_name           = module.ecs_cluster.cluster_name
   subnet_ids             = module.networking.private_app_subnet_ids
   security_group_id      = module.security_groups.backend_security_group_id
-  image                  = var.backend_container_image
+  image                  = local.backend_container_image
   execution_role_arn     = module.iam.ecs_task_execution_role_arn
   task_role_arn          = module.iam.backend_task_role_arn
   db_host                = module.rds.db_instance_address
@@ -240,7 +246,7 @@ module "backend_service" {
   aws_region            = var.aws_region
   execution_role_arn    = module.iam.ecs_task_execution_role_arn
   task_role_arn         = module.iam.backend_task_role_arn
-  container_image       = var.backend_container_image
+  container_image       = local.backend_container_image
   container_port        = var.backend_container_port
   subnets               = module.networking.private_app_subnet_ids
   security_groups       = [module.security_groups.backend_security_group_id]

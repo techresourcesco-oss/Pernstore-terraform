@@ -20,7 +20,10 @@ const createTransporter = async () => {
     const accessToken = await new Promise((resolve, reject) => {
       oauth2Client.getAccessToken((err, token) => {
         if (err) {
-          logger.error(err);
+        logger.error("Failed to retrieve OAuth access token", {
+          errorMessage: err.message || String(err),
+          stack: err.stack,
+        });
           reject();
         }
         resolve(token);
@@ -68,7 +71,10 @@ const signupMail = async (to, name) => {
     const emailTransporter = await createTransporter();
     await emailTransporter.sendMail(message);
   } catch (error) {
-    logger.error(error);
+    logger.error("Failed to send signup email", {
+      errorMessage: error.message,
+      stack: error.stack,
+    });
   }
 };
 
@@ -95,7 +101,10 @@ const forgotPasswordMail = async (token, email) => {
     const emailTransporter = await createTransporter();
     return await emailTransporter.sendMail(message);
   } catch (error) {
-    logger.error(error);
+    logger.error("Failed to send password reset email", {
+      errorMessage: error.message,
+      stack: error.stack,
+    });
     throw new ErrorHandler(500, error.message);
   }
 };
@@ -112,7 +121,10 @@ const resetPasswordMail = async (email) => {
     const emailTransporter = await createTransporter();
     await emailTransporter.sendMail(message);
   } catch (error) {
-    logger.error(error);
+    logger.error("Failed to send password reset confirmation email", {
+      errorMessage: error.message,
+      stack: error.stack,
+    });
     throw new ErrorHandler(500, error.message);
   }
 };
