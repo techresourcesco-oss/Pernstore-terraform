@@ -1,6 +1,8 @@
 const authService = require("../services/auth.service");
 const mail = require("../services/mail.service");
 const { ErrorHandler } = require("../helpers/error");
+const pool = require("../config");
+const { logger } = require("../utils/logger");
 
 const createAccount = async (req, res) => {
   const { token, refreshToken, user } = await authService.signUp(req.body);
@@ -23,6 +25,30 @@ const createAccount = async (req, res) => {
 
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
+
+  // TODO: Remove after New Relic observability demo
+  if (
+    process.env.NEW_RELIC_DEMO_TRIGGERS_ENABLED === "true" &&
+    email === "slow@test.com"
+  ) {
+    logger.warn("High latency detected during user lookup", { email });
+    await pool.query("SELECT pg_sleep(2.5)");
+  }
+
+  // TODO: Remove after New Relic observability demo
+  if (
+    process.env.NEW_RELIC_DEMO_TRIGGERS_ENABLED === "true" &&
+    email === "crash@test.com"
+  ) {
+    logger.error(
+      "Login failed: Authentication database connection timeout",
+      { email, stage: "auth_lookup" }
+    );
+    const error = new Error("Authentication database connection timeout");
+    require("newrelic").noticeError(error);
+    throw error;
+  }
+
   const { token, refreshToken, user } = await authService.login(
     email,
     password
